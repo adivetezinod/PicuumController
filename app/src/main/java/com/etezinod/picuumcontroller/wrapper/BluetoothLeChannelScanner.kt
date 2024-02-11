@@ -2,23 +2,31 @@ package com.etezinod.picuumcontroller.wrapper
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
 class BluetoothLeChannelScanner(
     private val bluetoothLeFlowScanner: BluetoothLeFlowScanner
 ) {
-    suspend fun startGattSender(
+    suspend fun startGattClient(
         address: String,
         sender: Sender,
-        receiver: Receiver
-    ) {
+        receiver: Receiver,
+        onConnect: () -> Unit
+    ) = withContext(Dispatchers.IO) {
+        val jobs = arrayListOf<Job>()
         val writeLock = Channel<Boolean>(Channel.BUFFERED)
 
-        bluetoothLeFlowScanner.getBluetoothGatt(
+        bluetoothLeFlowScanner.connectGatt(
             address,
             onCharacteristicChanged = { _, value ->
                 receiver.send(value)
@@ -30,9 +38,14 @@ class BluetoothLeChannelScanner(
                 println(String(value))
             }
         ).collect { bluetoothGatt ->
-            receiver.start(bluetoothGatt)
-            sender.start(bluetoothGatt, writeLock)
+            onConnect()
+            jobs += launch {
+                receiver.start(bluetoothGatt)
+                sender.start(bluetoothGatt, writeLock)
+            }
         }
+
+        jobs.forEach { it.cancelAndJoin() }
     }
 
     class Sender(

@@ -14,7 +14,7 @@ object BluetoothGattCompat {
         bluetoothGattCharacteristic: BluetoothGattCharacteristic,
         value: ByteArray,
         writeType: Int = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-    ) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    ) = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         bluetoothGatt.writeCharacteristic(
             bluetoothGattCharacteristic,
             value,
@@ -27,7 +27,7 @@ object BluetoothGattCompat {
                 this.writeType = writeType
             },
         )
-    }
+    }) && writeType != BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
 
     fun writeDescriptor(
         bluetoothGatt: BluetoothGatt,

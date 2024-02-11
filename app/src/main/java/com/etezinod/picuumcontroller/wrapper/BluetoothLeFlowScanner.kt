@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
@@ -57,11 +58,11 @@ class BluetoothLeFlowScanner(
         }
     }
 
-    fun getBluetoothGatt(
+    fun connectGatt(
         address: String,
         onCharacteristicWrite: (BluetoothGattCharacteristic) -> Unit,
         onCharacteristicChanged: (BluetoothGattCharacteristic, ByteArray) -> Unit,
-        onCharacteristicRead: (BluetoothGattCharacteristic, ByteArray) -> Unit,
+        onCharacteristicRead: (BluetoothGattCharacteristic, ByteArray) -> Unit
     ) = callbackFlow {
         val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             bluetoothManager.adapter.getRemoteLeDevice(
@@ -109,6 +110,14 @@ class BluetoothLeFlowScanner(
                 onCharacteristicWrite(characteristic)
             }
 
+            @Deprecated("Deprecated in Java")
+            override fun onCharacteristicChanged(
+                gatt: BluetoothGatt,
+                characteristic: BluetoothGattCharacteristic
+            ) {
+                onCharacteristicChanged(characteristic, characteristic.value)
+            }
+
             override fun onCharacteristicChanged(
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
@@ -117,13 +126,7 @@ class BluetoothLeFlowScanner(
                 onCharacteristicChanged(characteristic, value)
             }
 
-            override fun onCharacteristicChanged(
-                gatt: BluetoothGatt,
-                characteristic: BluetoothGattCharacteristic
-            ) {
-                onCharacteristicChanged(characteristic, characteristic.value)
-            }
-
+            @Deprecated("Deprecated in Java")
             override fun onCharacteristicRead(
                 gatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
@@ -159,6 +162,18 @@ class BluetoothLeFlowScanner(
         awaitClose {
             gatt.disconnect()
             gatt.close()
+        }
+    }
+
+    fun openGattServer() = callbackFlow {
+        val callback = object : BluetoothGattServerCallback() {
+
+        }
+        val bluetoothGattServer = bluetoothManager
+            .openGattServer(context, callback)
+            .apply(::trySend)
+        awaitClose {
+            bluetoothGattServer.close()
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.etezinod.picuumcontroller.screen
 
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -8,12 +9,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.etezinod.picuumcontroller.domain.repository.PicuumDeviceRepository
 import com.etezinod.picuumcontroller.wrapper.BluetoothLeChannelScanner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -30,15 +31,18 @@ fun PicuumControllerScreen() {
 private fun PicuumControllerScreenComposable(
     state: PicuumControllerScreenState
 ) {
-    if (state.isConnecting) {
+    if (!state.isConnected && !state.hasError) {
         CircularProgressIndicator()
+    } else if (state.hasError) {
+        Text("We're dead")
     } else {
-
+        Text("Big day")
     }
 }
 
 data class PicuumControllerScreenState(
-    val isConnecting: Boolean = false
+    val isConnected: Boolean = false,
+    val hasError: Boolean = false,
 )
 
 @HiltViewModel
@@ -58,7 +62,7 @@ class PicuumControllerViewModel @Inject constructor(
     init {
         val address = savedStateHandle["address"] ?: ""
         viewModelScope.launch {
-            bluetoothLeChannelScanner.startGattSender(
+            bluetoothLeChannelScanner.startGattClient(
                 address,
                 BluetoothLeChannelScanner.Sender(
                     sender, service, characteristic,
@@ -66,7 +70,10 @@ class PicuumControllerViewModel @Inject constructor(
                 BluetoothLeChannelScanner.Receiver(
                     receiver, service, characteristic, descriptor,
                 )
-            )
+            ) {
+                state.update { it.copy(isConnected = true) }
+            }
+            state.update { it.copy(isConnected = false,  hasError = true) }
         }
         viewModelScope.launch {
             var counter = 0

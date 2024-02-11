@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.PicuumController" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.PicuumController.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.PicuumController</item>
+    </style>
+</resources>

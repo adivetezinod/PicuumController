@@ -125,7 +125,7 @@ class PicuumDevicesScreenViewModel @Inject constructor(
     }
 }
 
-private class StateProvider : CollectionPreviewParameterProvider<PicuumDevicesScreenState>(
+private class PicuumDevicesScreenStateProvider : CollectionPreviewParameterProvider<PicuumDevicesScreenState>(
     listOf(
         PicuumDevicesScreenState(
             isScanning = true
@@ -149,7 +149,7 @@ private class StateProvider : CollectionPreviewParameterProvider<PicuumDevicesSc
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun PicuumDevicesScreenPreview(
-    @PreviewParameter(StateProvider::class)
+    @PreviewParameter(PicuumDevicesScreenStateProvider::class)
     data: PicuumDevicesScreenState
 ) {
     PicuumControllerTheme {

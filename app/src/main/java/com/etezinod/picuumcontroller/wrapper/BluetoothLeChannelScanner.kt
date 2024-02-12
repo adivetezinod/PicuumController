@@ -2,13 +2,13 @@ package com.etezinod.picuumcontroller.wrapper
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -34,8 +34,8 @@ class BluetoothLeChannelScanner(
             onCharacteristicWrite = {
                 writeLock.trySend(true)
             },
-            onCharacteristicRead = { _, value ->
-                println(String(value))
+            onCharacteristicRead = { _, _ ->
+                // nothing
             }
         ).collect { bluetoothGatt ->
             onConnect()
@@ -61,11 +61,11 @@ class BluetoothLeChannelScanner(
             val characteristic = service.getCharacteristic(characteristic)
 
             for (value in channel) {
-                writeLock.tryReceive()
                 BluetoothGattCompat.writeCharacteristic(
                     bluetoothGatt,
                     characteristic,
-                    value
+                    value,
+                    BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
                 ) && writeLock.receive()
             }
         }
